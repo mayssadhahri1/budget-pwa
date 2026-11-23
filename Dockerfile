@@ -8,6 +8,8 @@ RUN npm test && npm run build
 
 # Étape 2 : fichiers statiques servis par Nginx (image finale très légère)
 FROM nginx:1.29-alpine
+# Applique les correctifs de sécurité publiés depuis la sortie de l'image de base
+RUN apk upgrade --no-cache
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 
