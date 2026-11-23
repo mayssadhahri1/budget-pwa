@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  docker:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build de l'image
+        run: docker build -t budget-pwa:ci .
+      - name: Smoke test du conteneur
+        run: |
+          docker run -d --name budget -p 8080:80 budget-pwa:ci
+          for i in $(seq 1 10); do
+            curl -fs http://localhost:8080/healthz && curl -fs http://localhost:8080/ | grep -q "Mon Budget" && exit 0
+            sleep 2
+          done
+          docker logs budget
+          exit 1
+      - name: Scan de sécurité Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: budget-pwa:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
