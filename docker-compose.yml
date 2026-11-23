@@ -1,0 +1,8 @@
+services:
+  budget-pwa:
+    build: .
+    image: budget-pwa:latest
+    container_name: budget-pwa
+    ports:
+      - "8080:80"
+    restart: unless-stopped
